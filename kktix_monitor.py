@@ -100,12 +100,28 @@ def main():
 
                 current_sold_out = page_text.count("已售完")
 
-                # 確保網頁有正常載入 (有 TWD)，且「已售完」數量比基準線少
-                if "TWD" in page_text and current_sold_out < baseline_sold_out:
-                    msg = f"@everyone @everyone\n🚨 **警告！有區域的「已售完」消失了，可能有餘票釋出！**\n趕快點擊連結搶票：\n{EVENT_URL}"
-                    logging.info("🎉 發現餘票狀態改變！通知已發送！")
-                    send_discord_notify(msg) 
-                    time.sleep(600) 
+                # 確保網頁有正常載入 (有 TWD)
+                if "TWD" in page_text:
+                    if current_sold_out < baseline_sold_out:
+                        # 狀況 A：已售完變少 ＝ 有票釋出了！
+                        msg = f"@everyone\n🚨 **警告！有區域的「已售完」消失了！**\n📊 狀態：原本有 **{baseline_sold_out}** 個區域售完，現在變成 **{current_sold_out}** 個！\n趕快點擊連結搶票：\n{EVENT_URL}"
+                        logging.info(f"🎉 發現餘票狀態改變！通知已發送！({baseline_sold_out} -> {current_sold_out})")
+                        send_discord_notify(msg) 
+                        
+                        # 💡 核心修改：把當下的數量設為新的基準線，防止重複發送通知！
+                        baseline_sold_out = current_sold_out 
+                        
+                        # 這樣你就算改成 sleep 1 秒，它也不會轟炸了
+                        time.sleep(1) 
+
+                    elif current_sold_out > baseline_sold_out:
+                        # 狀況 B：已售完變多 ＝ 剛釋出的票又被別人買光了！
+                        logging.info(f"😢 剛釋出的票被買光了，已售完數量回到 {current_sold_out} 個。")
+                        
+                        # 同樣要更新基準線，這樣下次再釋出時才能正確比較
+                        baseline_sold_out = current_sold_out
+                        time.sleep(1)
+						
                 else:
                     display_count = current_sold_out if "TWD" in page_text else baseline_sold_out
                     logging.info(f"尚無餘票 (維持 {display_count} 個已售完) | 記憶體: {memory_usage}%，持續監測中...")
