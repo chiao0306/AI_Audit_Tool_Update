@@ -26,7 +26,13 @@ logging.basicConfig(
 # =====================================================
 
 def send_discord_notify(message):
-    data = {"content": message, "username": "KKTIX 搶票眼線"}
+    data = {
+        "content": message, 
+        "username": "KKTIX 搶票眼線",
+        "allowed_mentions": {
+            "parse": ["everyone"]  # 👉 就是這三行！讓手機震動的靈魂！
+        }
+    }
     try:
         requests.post(DISCORD_WEBHOOK_URL, json=data)
     except Exception as e:
