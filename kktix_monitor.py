@@ -26,7 +26,14 @@ logging.basicConfig(
 # =====================================================
 
 def send_discord_notify(message):
-    data = {"content": message, "username": "KKTIX 搶票眼線"}
+    # 在這裡加上 "allowed_mentions"，允許解析 "everyone"
+    data = {
+        "content": message, 
+        "username": "KKTIX 搶票眼線",
+        "allowed_mentions": {
+            "parse": ["everyone"]  # 💡 關鍵就是這一行！
+        }
+    }
     try:
         requests.post(DISCORD_WEBHOOK_URL, json=data)
     except Exception as e:
@@ -102,7 +109,7 @@ def main():
 
                 # 確保網頁有正常載入 (有 TWD)，且「已售完」數量比基準線少
                 if "TWD" in page_text and current_sold_out < baseline_sold_out:
-                    msg = f"@everyone @everyone\n🚨 **警告！有區域的「已售完」消失了，可能有餘票釋出！**\n趕快點擊連結搶票：\n{EVENT_URL}"
+                    msg = f"@everyone\n🚨 **警告！有區域的「已售完」消失了，可能有餘票釋出！**\n趕快點擊連結搶票：\n{EVENT_URL}"
                     logging.info("🎉 發現餘票狀態改變！通知已發送！")
                     send_discord_notify(msg) 
                     time.sleep(600) 
